@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Save, Store, MapPin, Clock, CreditCard, Loader2, Plus, X, Upload, Image, Pizza } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Save, Store, MapPin, Clock, CreditCard, Loader2, Plus, X, Upload, Image, Pizza, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSettings = () => {
@@ -25,6 +26,8 @@ const AdminSettings = () => {
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [pizzaPriceMethod, setPizzaPriceMethod] = useState<'highest' | 'average'>('highest');
   const [newPayment, setNewPayment] = useState("");
+  const [pixKey, setPixKey] = useState("");
+  const [pixKeyType, setPixKeyType] = useState("random");
   const [initialized, setInitialized] = useState(false);
 
   // Initialize form when settings load
@@ -37,6 +40,8 @@ const AdminSettings = () => {
     setOpeningHours(settings.opening_hours || {});
     setPaymentMethods(settings.payment_methods || []);
     setPizzaPriceMethod(settings.pizza_price_method || 'highest');
+    setPixKey(settings.pix_key || "");
+    setPixKeyType(settings.pix_key_type || "random");
     setInitialized(true);
   }
 
@@ -104,6 +109,8 @@ const AdminSettings = () => {
         opening_hours: openingHours,
         payment_methods: paymentMethods,
         pizza_price_method: pizzaPriceMethod,
+        pix_key: pixKey || null,
+        pix_key_type: pixKeyType,
       });
     } finally {
       setSaving(false);
@@ -394,6 +401,58 @@ const AdminSettings = () => {
               </Label>
             </div>
           </RadioGroup>
+        </div>
+
+        {/* PIX Configuration */}
+        <div className="bg-card rounded-xl p-6 shadow-md">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <QrCode className="w-6 h-6 text-primary" />
+            </div>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Configuração do PIX
+            </h2>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure sua chave PIX para receber pagamentos. Quando o cliente escolher PIX, ele verá o QR Code e poderá copiar a chave.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Tipo de Chave
+              </label>
+              <Select value={pixKeyType} onValueChange={setPixKeyType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cpf">CPF</SelectItem>
+                  <SelectItem value="cnpj">CNPJ</SelectItem>
+                  <SelectItem value="email">E-mail</SelectItem>
+                  <SelectItem value="phone">Telefone</SelectItem>
+                  <SelectItem value="random">Chave aleatória</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Chave PIX
+              </label>
+              <input
+                type="text"
+                value={pixKey}
+                onChange={(e) => setPixKey(e.target.value)}
+                placeholder="Digite sua chave PIX"
+                className="w-full p-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                A chave será exibida para o cliente no momento do pagamento
+              </p>
+            </div>
+          </div>
         </div>
 
         <Button onClick={handleSave} size="lg" className="w-full" disabled={saving}>

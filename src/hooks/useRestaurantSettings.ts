@@ -13,6 +13,8 @@ export interface RestaurantSettings {
   opening_hours: Record<string, { open: string; close: string } | null>;
   payment_methods: string[];
   pizza_price_method: 'highest' | 'average';
+  pix_key: string | null;
+  pix_key_type: string | null;
   created_at: string;
   updated_at: string;
 }

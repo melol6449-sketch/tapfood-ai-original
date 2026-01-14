@@ -147,6 +147,8 @@ export type Database = {
           opening_hours: Json
           payment_methods: string[]
           phone: string | null
+          pix_key: string | null
+          pix_key_type: string | null
           pizza_price_method: string
           updated_at: string
           whatsapp: string | null
@@ -161,6 +163,8 @@ export type Database = {
           opening_hours?: Json
           payment_methods?: string[]
           phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           pizza_price_method?: string
           updated_at?: string
           whatsapp?: string | null
@@ -175,6 +179,8 @@ export type Database = {
           opening_hours?: Json
           payment_methods?: string[]
           phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           pizza_price_method?: string
           updated_at?: string
           whatsapp?: string | null

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, CheckCircle, MapPin, User, Phone, CreditCard } from "lucide-react";
+import { Loader2, CheckCircle, MapPin, User, Phone, CreditCard, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +25,7 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { toast } from "sonner";
+import { PixPaymentScreen } from "./PixPaymentScreen";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
@@ -43,6 +44,8 @@ interface CheckoutDialogProps {
 export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [showPixScreen, setShowPixScreen] = useState(false);
+  const [formData, setFormData] = useState<CheckoutFormData | null>(null);
   const { items, total, clearCart } = useCart();
   const { settings } = useRestaurantSettings();
 
@@ -65,7 +68,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
     });
   };
 
-  const onSubmit = async (data: CheckoutFormData) => {
+  const submitOrder = async (data: CheckoutFormData) => {
     if (items.length === 0) {
       toast.error("Seu carrinho está vazio");
       return;
@@ -94,6 +97,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
       if (error) throw error;
 
       setOrderComplete(true);
+      setShowPixScreen(false);
       clearCart();
       form.reset();
       toast.success("Pedido realizado com sucesso!");
@@ -105,19 +109,60 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
     }
   };
 
+  const onSubmit = async (data: CheckoutFormData) => {
+    // Check if PIX was selected and PIX key is configured
+    const isPixPayment = data.paymentMethod.toLowerCase() === "pix";
+    const hasPixKey = settings?.pix_key && settings.pix_key.trim() !== "";
+
+    if (isPixPayment && hasPixKey) {
+      // Save form data and show PIX screen
+      setFormData(data);
+      setShowPixScreen(true);
+    } else {
+      // Submit order directly
+      await submitOrder(data);
+    }
+  };
+
+  const handlePixConfirm = async () => {
+    if (formData) {
+      await submitOrder(formData);
+    }
+  };
+
+  const handleBackFromPix = () => {
+    setShowPixScreen(false);
+  };
+
   const handleClose = () => {
     if (!isSubmitting) {
       setOrderComplete(false);
+      setShowPixScreen(false);
+      setFormData(null);
       onOpenChange(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {orderComplete ? "Pedido Confirmado!" : "Finalizar Pedido"}
+          <DialogTitle className="flex items-center gap-2">
+            {showPixScreen && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBackFromPix}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
+            {orderComplete
+              ? "Pedido Confirmado!"
+              : showPixScreen
+              ? "Pagamento PIX"
+              : "Finalizar Pedido"}
           </DialogTitle>
         </DialogHeader>
 
@@ -132,6 +177,14 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
               Voltar ao Menu
             </Button>
           </div>
+        ) : showPixScreen && settings?.pix_key ? (
+          <PixPaymentScreen
+            pixKey={settings.pix_key}
+            pixKeyType={settings.pix_key_type || "random"}
+            total={total}
+            onConfirm={handlePixConfirm}
+            isSubmitting={isSubmitting}
+          />
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
