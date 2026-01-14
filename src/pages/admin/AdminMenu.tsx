@@ -69,6 +69,7 @@ const AdminMenu = () => {
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<MenuProduct | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
   
   // Delete confirmation states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -158,14 +159,16 @@ const AdminMenu = () => {
   };
 
   // Product handlers
-  const handleNewProduct = (categoryId: string) => {
+  const handleNewProduct = (categoryId: string, categoryName: string) => {
     setSelectedCategoryId(categoryId);
+    setSelectedCategoryName(categoryName);
     setEditingProduct(null);
     setProductDialogOpen(true);
   };
 
-  const handleEditProduct = (product: MenuProduct) => {
+  const handleEditProduct = (product: MenuProduct, categoryName: string) => {
     setSelectedCategoryId(product.category_id);
+    setSelectedCategoryName(categoryName);
     setEditingProduct(product);
     setProductDialogOpen(true);
   };
@@ -175,6 +178,7 @@ const AdminMenu = () => {
     description: string;
     price: number;
     category_id: string;
+    is_pizza_flavor?: boolean;
   }) => {
     if (editingProduct) {
       await updateProduct(editingProduct.id, data);
@@ -375,16 +379,16 @@ const AdminMenu = () => {
                             strategy={verticalListSortingStrategy}
                           >
                             <div className="divide-y divide-border">
-                              {categoryProducts.map((product) => (
-                                <SortableProductItem
-                                  key={product.id}
-                                  product={product}
-                                  categoryIcon={category.icon}
-                                  onEdit={() => handleEditProduct(product)}
-                                  onToggleAvailable={() => handleToggleAvailable(product)}
-                                  onDelete={() => handleDeleteProduct(product)}
-                                />
-                              ))}
+                                {categoryProducts.map((product) => (
+                                  <SortableProductItem
+                                    key={product.id}
+                                    product={product}
+                                    categoryIcon={category.icon}
+                                    onEdit={() => handleEditProduct(product, category.name)}
+                                    onToggleAvailable={() => handleToggleAvailable(product)}
+                                    onDelete={() => handleDeleteProduct(product)}
+                                  />
+                                ))}
                             </div>
                           </SortableContext>
                         </DndContext>
@@ -393,7 +397,7 @@ const AdminMenu = () => {
                       {/* Add Item Button */}
                       <div className="p-4 pl-14">
                         <button
-                          onClick={() => handleNewProduct(category.id)}
+                          onClick={() => handleNewProduct(category.id, category.name)}
                           className="flex items-center gap-2 text-primary font-medium hover:text-primary/80 transition-colors"
                         >
                           <Plus className="w-5 h-5" />
@@ -438,6 +442,7 @@ const AdminMenu = () => {
         onOpenChange={setProductDialogOpen}
         product={editingProduct}
         categoryId={selectedCategoryId}
+        categoryName={selectedCategoryName}
         onSave={handleSaveProduct}
       />
 

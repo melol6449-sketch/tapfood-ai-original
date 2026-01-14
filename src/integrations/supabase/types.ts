@@ -55,6 +55,7 @@ export type Database = {
           description: string | null
           id: string
           image: string | null
+          is_pizza_flavor: boolean
           name: string
           position: number
           price: number
@@ -67,6 +68,7 @@ export type Database = {
           description?: string | null
           id?: string
           image?: string | null
+          is_pizza_flavor?: boolean
           name: string
           position?: number
           price?: number
@@ -79,6 +81,7 @@ export type Database = {
           description?: string | null
           id?: string
           image?: string | null
+          is_pizza_flavor?: boolean
           name?: string
           position?: number
           price?: number
@@ -144,6 +147,7 @@ export type Database = {
           opening_hours: Json
           payment_methods: string[]
           phone: string | null
+          pizza_price_method: string
           updated_at: string
           whatsapp: string | null
         }
@@ -157,6 +161,7 @@ export type Database = {
           opening_hours?: Json
           payment_methods?: string[]
           phone?: string | null
+          pizza_price_method?: string
           updated_at?: string
           whatsapp?: string | null
         }
@@ -170,6 +175,7 @@ export type Database = {
           opening_hours?: Json
           payment_methods?: string[]
           phone?: string | null
+          pizza_price_method?: string
           updated_at?: string
           whatsapp?: string | null
         }

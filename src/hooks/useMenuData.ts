@@ -22,6 +22,7 @@ export interface MenuProduct {
   image: string | null;
   position: number;
   available: boolean;
+  is_pizza_flavor: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -137,6 +138,7 @@ export const useMenuData = () => {
     name: string;
     description?: string;
     price: number;
+    is_pizza_flavor?: boolean;
   }) => {
     try {
       const categoryProducts = products.filter(
@@ -146,7 +148,11 @@ export const useMenuData = () => {
 
       const { data: newProduct, error } = await supabase
         .from("menu_products")
-        .insert({ ...data, position: maxPosition + 1 })
+        .insert({ 
+          ...data, 
+          position: maxPosition + 1,
+          is_pizza_flavor: data.is_pizza_flavor || false,
+        })
         .select()
         .single();
 

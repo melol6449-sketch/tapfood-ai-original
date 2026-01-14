@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import heroBurger from "@/assets/hero-burger.jpg";
 import { RestaurantHeader } from "@/components/customer/RestaurantHeader";
 import { RestaurantInfo } from "@/components/customer/RestaurantInfo";
 import { CategoryNav } from "@/components/customer/CategoryNav";
 import { ProductCard } from "@/components/customer/ProductCard";
+import { PizzaCard } from "@/components/customer/PizzaCard";
 import { CartButton } from "@/components/customer/CartButton";
 import { CartSheet } from "@/components/customer/CartSheet";
 import { CheckoutDialog } from "@/components/customer/CheckoutDialog";
@@ -23,6 +24,13 @@ const CustomerMenu = () => {
     setCheckoutOpen(true);
   };
 
+  // Check if a category is "Pizza" category (has pizza flavors)
+  const isPizzaCategory = (categoryId: string) => {
+    return products.some(
+      (p) => p.category_id === categoryId && p.is_pizza_flavor
+    );
+  };
+
   const filteredProducts =
     activeCategory === "all"
       ? products
@@ -35,6 +43,7 @@ const CustomerMenu = () => {
     )
     .map((cat) => ({
       ...cat,
+      isPizza: isPizzaCategory(cat.id),
       products: filteredProducts.filter((p) => p.category_id === cat.id),
     }))
     .filter((cat) => cat.products.length > 0);
@@ -84,15 +93,26 @@ const CustomerMenu = () => {
                       <span className="text-2xl">{category.icon}</span>
                       {category.name}
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {category.products.map((product) => (
-                        <ProductCard 
-                          key={product.id} 
-                          product={product} 
+                    {category.isPizza ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <PizzaCard
+                          categoryName={category.name}
                           categoryIcon={category.icon}
+                          flavors={category.products}
+                          priceMethod={settings?.pizza_price_method || 'highest'}
                         />
-                      ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {category.products.map((product) => (
+                          <ProductCard 
+                            key={product.id} 
+                            product={product} 
+                            categoryIcon={category.icon}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
