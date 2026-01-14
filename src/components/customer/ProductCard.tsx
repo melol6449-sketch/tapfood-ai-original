@@ -1,4 +1,8 @@
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
 import type { MenuProduct } from "@/hooks/useCustomerMenu";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: MenuProduct;
@@ -6,11 +10,24 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, categoryIcon }: ProductCardProps) {
+  const { addItem } = useCart();
+
   const formatPrice = (price: number) => {
     return price.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
+  };
+
+  const handleAddToCart = () => {
+    if (!product.available) return;
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image || undefined,
+    });
+    toast.success(`${product.name} adicionado ao carrinho!`);
   };
 
   return (
@@ -47,6 +64,16 @@ export function ProductCard({ product, categoryIcon }: ProductCardProps) {
           <span className="text-xl font-bold text-primary">
             {formatPrice(product.price)}
           </span>
+          {product.available && (
+            <Button
+              size="sm"
+              onClick={handleAddToCart}
+              className="gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { orders as initialOrders, type Order } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Phone, Clock, ChevronRight } from "lucide-react";
+import { Search, Phone, Clock, ChevronRight, MapPin, CreditCard, Loader2 } from "lucide-react";
+import { useOrders, type Order } from "@/hooks/useOrders";
+import { toast } from "sonner";
 
 const statusConfig = {
   pending: {
@@ -28,15 +29,16 @@ const statusConfig = {
 };
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const { orders, loading, updateOrderStatus } = useOrders();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleStatusChange = (orderId: string, newStatus: Order["status"]) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+  const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
+    const success = await updateOrderStatus(orderId, newStatus);
+    if (success) {
+      toast.success("Status atualizado!");
+    } else {
+      toast.error("Erro ao atualizar status");
+    }
   };
 
   const getNextStatus = (status: Order["status"]): Order["status"] | null => {
@@ -49,7 +51,7 @@ const AdminOrders = () => {
     return statusFlow[status];
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: string) => {
     const now = new Date();
     const diff = Math.floor((now.getTime() - new Date(date).getTime()) / 60000);
     if (diff < 60) return `${diff} min`;
@@ -66,10 +68,18 @@ const AdminOrders = () => {
   const filteredOrders = orders.filter(
     (order) =>
       order.id.includes(searchTerm) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+      order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns: Order["status"][] = ["pending", "preparing", "ready", "delivered"];
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -92,10 +102,6 @@ const AdminOrders = () => {
                 className="pl-10 w-64"
               />
             </div>
-            <Button>
-              <Plus className="w-4 h-4" />
-              Novo pedido
-            </Button>
           </div>
         </div>
       </div>
@@ -148,11 +154,11 @@ const AdminOrders = () => {
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground">
-                              #{order.id}
+                              #{order.id.slice(0, 8)}
                             </span>
                             <div className="flex items-center gap-1 text-muted-foreground text-xs">
                               <Clock className="w-3 h-3" />
-                              {formatTime(order.createdAt)}
+                              {formatTime(order.created_at)}
                             </div>
                           </div>
                           <span className="font-bold text-primary">
@@ -164,23 +170,35 @@ const AdminOrders = () => {
                         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-primary font-semibold text-sm">
-                              {order.customerName.charAt(0)}
+                              {order.customer_name.charAt(0)}
                             </span>
                           </div>
                           <div className="flex-1">
                             <p className="font-medium text-foreground text-sm">
-                              {order.customerName}
+                              {order.customer_name}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {order.customerPhone}
+                              {order.customer_phone}
                             </p>
                           </div>
                           <a
-                            href={`tel:${order.customerPhone}`}
+                            href={`tel:${order.customer_phone}`}
                             className="p-2 rounded-full hover:bg-muted transition-colors"
                           >
                             <Phone className="w-4 h-4 text-primary" />
                           </a>
+                        </div>
+
+                        {/* Address */}
+                        <div className="flex items-start gap-2 mb-3 text-sm">
+                          <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                          <span className="text-muted-foreground">{order.customer_address}</span>
+                        </div>
+
+                        {/* Payment */}
+                        <div className="flex items-center gap-2 mb-3 text-sm">
+                          <CreditCard className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{order.payment_method}</span>
                         </div>
 
                         {/* Items */}
