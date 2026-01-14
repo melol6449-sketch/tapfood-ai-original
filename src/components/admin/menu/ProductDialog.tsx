@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { MenuProduct } from "@/hooks/useMenuData";
 
 interface ProductDialogProps {
@@ -17,11 +18,13 @@ interface ProductDialogProps {
   onOpenChange: (open: boolean) => void;
   product?: MenuProduct | null;
   categoryId: string;
+  categoryName?: string;
   onSave: (data: {
     name: string;
     description: string;
     price: number;
     category_id: string;
+    is_pizza_flavor?: boolean;
   }) => Promise<void>;
 }
 
@@ -30,24 +33,30 @@ export const ProductDialog = ({
   onOpenChange,
   product,
   categoryId,
+  categoryName,
   onSave,
 }: ProductDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [isPizzaFlavor, setIsPizzaFlavor] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const isPizzaCategory = categoryName?.toLowerCase().includes("pizza");
 
   useEffect(() => {
     if (product) {
       setName(product.name);
       setDescription(product.description || "");
       setPrice(product.price.toString());
+      setIsPizzaFlavor(product.is_pizza_flavor || false);
     } else {
       setName("");
       setDescription("");
       setPrice("");
+      setIsPizzaFlavor(isPizzaCategory || false);
     }
-  }, [product, open]);
+  }, [product, open, isPizzaCategory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +69,7 @@ export const ProductDialog = ({
         description: description.trim(),
         price: parseFloat(price) || 0,
         category_id: categoryId,
+        is_pizza_flavor: isPizzaFlavor,
       });
       onOpenChange(false);
     } finally {
@@ -113,6 +123,22 @@ export const ProductDialog = ({
                 inputMode="decimal"
               />
             </div>
+            
+            {isPizzaCategory && (
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="is-pizza-flavor"
+                  checked={isPizzaFlavor}
+                  onCheckedChange={(checked) => setIsPizzaFlavor(checked === true)}
+                />
+                <Label 
+                  htmlFor="is-pizza-flavor" 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Este produto é um sabor de pizza (permite seleção múltipla)
+                </Label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button

@@ -3,7 +3,9 @@ import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Save, Store, MapPin, Clock, CreditCard, Loader2, Plus, X, Upload, Image } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Save, Store, MapPin, Clock, CreditCard, Loader2, Plus, X, Upload, Image, Pizza } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSettings = () => {
@@ -21,6 +23,7 @@ const AdminSettings = () => {
   const [logo, setLogo] = useState<string | null>(null);
   const [openingHours, setOpeningHours] = useState<Record<string, { open: string; close: string } | null>>({});
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [pizzaPriceMethod, setPizzaPriceMethod] = useState<'highest' | 'average'>('highest');
   const [newPayment, setNewPayment] = useState("");
   const [initialized, setInitialized] = useState(false);
 
@@ -33,6 +36,7 @@ const AdminSettings = () => {
     setLogo(settings.logo);
     setOpeningHours(settings.opening_hours || {});
     setPaymentMethods(settings.payment_methods || []);
+    setPizzaPriceMethod(settings.pizza_price_method || 'highest');
     setInitialized(true);
   }
 
@@ -99,6 +103,7 @@ const AdminSettings = () => {
         is_open: isOpen,
         opening_hours: openingHours,
         payment_methods: paymentMethods,
+        pizza_price_method: pizzaPriceMethod,
       });
     } finally {
       setSaving(false);
@@ -348,6 +353,47 @@ const AdminSettings = () => {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Pizza Price Calculation */}
+        <div className="bg-card rounded-xl p-6 shadow-md">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Pizza className="w-6 h-6 text-primary" />
+            </div>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Cálculo de Preço - Pizza
+            </h2>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4">
+            Defina como o preço será calculado quando o cliente selecionar múltiplos sabores de pizza.
+          </p>
+
+          <RadioGroup 
+            value={pizzaPriceMethod} 
+            onValueChange={(value) => setPizzaPriceMethod(value as 'highest' | 'average')}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
+              <RadioGroupItem value="highest" id="highest" />
+              <Label htmlFor="highest" className="flex-1 cursor-pointer">
+                <p className="font-medium text-foreground">Maior preço</p>
+                <p className="text-sm text-muted-foreground">
+                  Cobra o valor do sabor mais caro selecionado
+                </p>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
+              <RadioGroupItem value="average" id="average" />
+              <Label htmlFor="average" className="flex-1 cursor-pointer">
+                <p className="font-medium text-foreground">Média de preços</p>
+                <p className="text-sm text-muted-foreground">
+                  Cobra a média dos valores dos sabores selecionados
+                </p>
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
 
         <Button onClick={handleSave} size="lg" className="w-full" disabled={saving}>

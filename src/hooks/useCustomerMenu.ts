@@ -18,6 +18,7 @@ export interface MenuProduct {
   image: string | null;
   position: number;
   available: boolean;
+  is_pizza_flavor: boolean;
 }
 
 export const useCustomerMenu = () => {

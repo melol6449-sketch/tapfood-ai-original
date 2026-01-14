@@ -12,6 +12,7 @@ export interface RestaurantSettings {
   is_open: boolean;
   opening_hours: Record<string, { open: string; close: string } | null>;
   payment_methods: string[];
+  pizza_price_method: 'highest' | 'average';
   created_at: string;
   updated_at: string;
 }
@@ -31,7 +32,11 @@ export const useRestaurantSettings = () => {
         .single();
 
       if (error) throw error;
-      setSettings(data as RestaurantSettings);
+      setSettings({
+        ...data,
+        opening_hours: data.opening_hours as Record<string, { open: string; close: string } | null>,
+        pizza_price_method: (data.pizza_price_method || 'highest') as 'highest' | 'average',
+      } as RestaurantSettings);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar configurações",
@@ -59,7 +64,11 @@ export const useRestaurantSettings = () => {
         .single();
 
       if (error) throw error;
-      setSettings(updated as RestaurantSettings);
+      setSettings({
+        ...updated,
+        opening_hours: updated.opening_hours as Record<string, { open: string; close: string } | null>,
+        pizza_price_method: (updated.pizza_price_method || 'highest') as 'highest' | 'average',
+      } as RestaurantSettings);
       toast({ title: "Configurações salvas!" });
       return updated;
     } catch (error: any) {
