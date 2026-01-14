@@ -4,15 +4,24 @@ import { RestaurantHeader } from "@/components/customer/RestaurantHeader";
 import { RestaurantInfo } from "@/components/customer/RestaurantInfo";
 import { CategoryNav } from "@/components/customer/CategoryNav";
 import { ProductCard } from "@/components/customer/ProductCard";
-import { WhatsAppButton } from "@/components/customer/WhatsAppButton";
+import { CartButton } from "@/components/customer/CartButton";
+import { CartSheet } from "@/components/customer/CartSheet";
+import { CheckoutDialog } from "@/components/customer/CheckoutDialog";
 import { useCustomerMenu } from "@/hooks/useCustomerMenu";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { Loader2 } from "lucide-react";
 
 const CustomerMenu = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const { categories, products, loading: menuLoading } = useCustomerMenu();
   const { settings, loading: settingsLoading } = useRestaurantSettings();
+
+  const handleCheckout = () => {
+    setCartOpen(false);
+    setCheckoutOpen(true);
+  };
 
   const filteredProducts =
     activeCategory === "all"
@@ -98,7 +107,16 @@ const CustomerMenu = () => {
         </div>
       </div>
 
-      <WhatsAppButton />
+      <CartButton onClick={() => setCartOpen(true)} />
+      <CartSheet 
+        open={cartOpen} 
+        onOpenChange={setCartOpen} 
+        onCheckout={handleCheckout} 
+      />
+      <CheckoutDialog 
+        open={checkoutOpen} 
+        onOpenChange={setCheckoutOpen} 
+      />
     </div>
   );
 };
