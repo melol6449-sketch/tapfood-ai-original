@@ -5,7 +5,7 @@ import { ExternalLink } from "lucide-react";
 
 export function AdminLayout() {
   const handleOpenCustomerMenu = () => {
-    window.open("/", "_blank");
+    window.open("/cardapio", "_blank");
   };
 
   return (
