@@ -1,11 +1,30 @@
-import { categories } from "@/data/mockData";
+import type { MenuCategory } from "@/hooks/useCustomerMenu";
 
 interface CategoryNavProps {
+  categories: MenuCategory[];
   activeCategory: string;
   onCategoryChange: (categoryId: string) => void;
+  loading?: boolean;
 }
 
-export function CategoryNav({ activeCategory, onCategoryChange }: CategoryNavProps) {
+export function CategoryNav({ 
+  categories, 
+  activeCategory, 
+  onCategoryChange,
+  loading 
+}: CategoryNavProps) {
+  if (loading) {
+    return (
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-10 w-24 bg-muted rounded-full animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border">
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

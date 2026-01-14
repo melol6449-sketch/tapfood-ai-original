@@ -5,15 +5,19 @@ import { RestaurantInfo } from "@/components/customer/RestaurantInfo";
 import { CategoryNav } from "@/components/customer/CategoryNav";
 import { ProductCard } from "@/components/customer/ProductCard";
 import { WhatsAppButton } from "@/components/customer/WhatsAppButton";
-import { categories, products } from "@/data/mockData";
+import { useCustomerMenu } from "@/hooks/useCustomerMenu";
+import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
+import { Loader2 } from "lucide-react";
 
 const CustomerMenu = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const { categories, products, loading: menuLoading } = useCustomerMenu();
+  const { settings, loading: settingsLoading } = useRestaurantSettings();
 
   const filteredProducts =
     activeCategory === "all"
       ? products
-      : products.filter((p) => p.categoryId === activeCategory);
+      : products.filter((p) => p.category_id === activeCategory);
 
   const groupedProducts = categories
     .filter(
@@ -22,9 +26,11 @@ const CustomerMenu = () => {
     )
     .map((cat) => ({
       ...cat,
-      products: filteredProducts.filter((p) => p.categoryId === cat.id),
+      products: filteredProducts.filter((p) => p.category_id === cat.id),
     }))
     .filter((cat) => cat.products.length > 0);
+
+  const isLoading = menuLoading || settingsLoading;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -32,7 +38,7 @@ const CustomerMenu = () => {
       <div className="relative h-48 md:h-64 overflow-hidden">
         <img
           src={heroBurger}
-          alt="Burger House"
+          alt={settings?.name || "Restaurante"}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
@@ -40,36 +46,54 @@ const CustomerMenu = () => {
 
       {/* Content */}
       <div className="relative -mt-12 px-4 md:px-6 max-w-5xl mx-auto">
-        <RestaurantHeader />
+        <RestaurantHeader settings={settings} loading={settingsLoading} />
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Info Section - Sidebar on desktop */}
           <div className="md:col-span-1 order-2 md:order-1">
-            <RestaurantInfo />
+            <RestaurantInfo settings={settings} loading={settingsLoading} />
           </div>
 
           {/* Menu Section */}
           <div className="md:col-span-2 order-1 md:order-2">
             <CategoryNav
+              categories={categories}
               activeCategory={activeCategory}
               onCategoryChange={setActiveCategory}
+              loading={menuLoading}
             />
 
-            <div className="mt-6 space-y-8">
-              {groupedProducts.map((category) => (
-                <div key={category.id} className="animate-fade-in">
-                  <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                    <span className="text-2xl">{category.icon}</span>
-                    {category.name}
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {category.products.map((product) => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
+            {menuLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : groupedProducts.length > 0 ? (
+              <div className="mt-6 space-y-8">
+                {groupedProducts.map((category) => (
+                  <div key={category.id} className="animate-fade-in">
+                    <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                      <span className="text-2xl">{category.icon}</span>
+                      {category.name}
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {category.products.map((product) => (
+                        <ProductCard 
+                          key={product.id} 
+                          product={product} 
+                          categoryIcon={category.icon}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  Nenhum produto disponível no momento.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
