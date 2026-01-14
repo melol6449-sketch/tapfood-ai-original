@@ -128,7 +128,7 @@ const AdminOrders = () => {
       order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const columns: Order["status"][] = ["pending", "preparing", "ready", "delivered"];
+  const columns: Order["status"][] = ["pending", "preparing", "ready"];
 
   if (loading) {
     return (
