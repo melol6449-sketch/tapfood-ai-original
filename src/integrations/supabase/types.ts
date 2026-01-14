@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      menu_categories: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          is_promo: boolean
+          is_visible: boolean
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_promo?: boolean
+          is_visible?: boolean
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_promo?: boolean
+          is_visible?: boolean
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_products: {
+        Row: {
+          available: boolean
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image: string | null
+          name: string
+          position: number
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          available?: boolean
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image?: string | null
+          name: string
+          position?: number
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          available?: boolean
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image?: string | null
+          name?: string
+          position?: number
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
