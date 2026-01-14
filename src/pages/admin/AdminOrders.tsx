@@ -8,7 +8,18 @@ import { toast } from "sonner";
 // Simple notification sound using Web Audio API
 const playNotificationSound = () => {
   try {
-    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+
+    const audioContext = new AudioCtx();
+
+    // Some browsers require an explicit resume after a user gesture
+    if (audioContext.state === "suspended") {
+      void audioContext.resume();
+    }
+
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
