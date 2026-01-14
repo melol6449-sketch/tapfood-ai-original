@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface OrderItem {
@@ -21,11 +21,13 @@ export interface Order {
   updated_at: string;
 }
 
-export function useOrders() {
+export function useOrders(onNewOrder?: () => void) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const previousOrderIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from("orders")
       .select("*")
@@ -43,9 +45,27 @@ export function useOrders() {
       status: order.status as Order["status"],
     }));
 
+    // Check for new orders (only after initial load)
+    if (!isInitialLoadRef.current && onNewOrder) {
+      const currentIds = new Set(parsedOrders.map((o) => o.id));
+      const previousIds = previousOrderIdsRef.current;
+      
+      // Check if there's a new order that wasn't in the previous set
+      for (const id of currentIds) {
+        if (!previousIds.has(id)) {
+          onNewOrder();
+          break;
+        }
+      }
+    }
+
+    // Update previous order IDs
+    previousOrderIdsRef.current = new Set(parsedOrders.map((o) => o.id));
+    isInitialLoadRef.current = false;
+
     setOrders(parsedOrders);
     setLoading(false);
-  };
+  }, [onNewOrder]);
 
   const updateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
     const { error } = await supabase
@@ -84,7 +104,7 @@ export function useOrders() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchOrders]);
 
   return { orders, loading, updateOrderStatus, refetch: fetchOrders };
 }

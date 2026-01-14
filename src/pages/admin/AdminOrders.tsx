@@ -1,9 +1,50 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Phone, Clock, ChevronRight, MapPin, CreditCard, Loader2 } from "lucide-react";
 import { useOrders, type Order } from "@/hooks/useOrders";
 import { toast } from "sonner";
+
+// Simple notification sound using Web Audio API
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = 800;
+    oscillator.type = "sine";
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+
+    // Play a second beep
+    setTimeout(() => {
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode2 = audioContext.createGain();
+
+      oscillator2.connect(gainNode2);
+      gainNode2.connect(audioContext.destination);
+
+      oscillator2.frequency.value = 1000;
+      oscillator2.type = "sine";
+
+      gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      oscillator2.start(audioContext.currentTime);
+      oscillator2.stop(audioContext.currentTime + 0.5);
+    }, 200);
+  } catch (error) {
+    console.error("Error playing notification sound:", error);
+  }
+};
 
 const statusConfig = {
   pending: {
@@ -29,7 +70,12 @@ const statusConfig = {
 };
 
 const AdminOrders = () => {
-  const { orders, loading, updateOrderStatus } = useOrders();
+  const handleNewOrder = useCallback(() => {
+    playNotificationSound();
+    toast.info("🔔 Novo pedido recebido!");
+  }, []);
+
+  const { orders, loading, updateOrderStatus } = useOrders(handleNewOrder);
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
