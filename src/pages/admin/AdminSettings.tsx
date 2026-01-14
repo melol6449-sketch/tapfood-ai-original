@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Save, Store, MapPin, Clock, CreditCard, Loader2, Plus, X } from "lucide-react";
+import { Save, Store, MapPin, Clock, CreditCard, Loader2, Plus, X, Upload, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSettings = () => {
   const { settings, loading, updateSettings } = useRestaurantSettings();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Local form state
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [isOpen, setIsOpen] = useState(true);
+  const [logo, setLogo] = useState<string | null>(null);
   const [openingHours, setOpeningHours] = useState<Record<string, { open: string; close: string } | null>>({});
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [newPayment, setNewPayment] = useState("");
@@ -26,10 +30,63 @@ const AdminSettings = () => {
     setPhone(settings.phone || "");
     setAddress(settings.address || "");
     setIsOpen(settings.is_open);
+    setLogo(settings.logo);
     setOpeningHours(settings.opening_hours || {});
     setPaymentMethods(settings.payment_methods || []);
     setInitialized(true);
   }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Arquivo inválido",
+        description: "Por favor, selecione uma imagem.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O tamanho máximo é 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `restaurant-logo-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("logos")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("logos")
+        .getPublicUrl(fileName);
+
+      setLogo(urlData.publicUrl);
+      toast({ title: "Logo enviado com sucesso!" });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao enviar logo",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -38,6 +95,7 @@ const AdminSettings = () => {
         name,
         phone,
         address,
+        logo,
         is_open: isOpen,
         opening_hours: openingHours,
         payment_methods: paymentMethods,
@@ -89,6 +147,57 @@ const AdminSettings = () => {
       </div>
 
       <div className="max-w-2xl space-y-6">
+        {/* Logo Upload */}
+        <div className="bg-card rounded-xl p-6 shadow-md">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Image className="w-6 h-6 text-primary" />
+            </div>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Logo da Lanchonete
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-secondary flex items-center justify-center border-2 border-dashed border-border">
+              {logo ? (
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Image className="w-8 h-8 text-muted-foreground" />
+              )}
+            </div>
+
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingLogo}
+              >
+                {uploadingLogo ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                {uploadingLogo ? "Enviando..." : "Enviar logo"}
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                Formatos: PNG, JPG. Tamanho máximo: 2MB
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Restaurant Info */}
         <div className="bg-card rounded-xl p-6 shadow-md">
           <div className="flex items-center gap-3 mb-6">
@@ -177,21 +286,21 @@ const AdminSettings = () => {
 
           <div className="space-y-3">
             {Object.entries(openingHours).map(([day, hours]) => (
-              <div key={day} className="flex items-center justify-between">
-                <span className="font-medium text-foreground w-24">{day}</span>
-                <div className="flex items-center gap-2">
+              <div key={day} className="flex items-center justify-between gap-4">
+                <span className="font-medium text-foreground w-24 shrink-0">{day}</span>
+                <div className="flex items-center gap-2 flex-1 justify-end">
                   <input
                     type="time"
                     value={hours?.open || ""}
                     onChange={(e) => updateHour(day, "open", e.target.value)}
-                    className="p-2 rounded-lg border border-border bg-background text-foreground text-sm"
+                    className="p-2 rounded-lg border border-border bg-background text-foreground text-sm w-28"
                   />
                   <span className="text-muted-foreground">até</span>
                   <input
                     type="time"
                     value={hours?.close || ""}
                     onChange={(e) => updateHour(day, "close", e.target.value)}
-                    className="p-2 rounded-lg border border-border bg-background text-foreground text-sm"
+                    className="p-2 rounded-lg border border-border bg-background text-foreground text-sm w-28"
                   />
                 </div>
               </div>
