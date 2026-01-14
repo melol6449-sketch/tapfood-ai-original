@@ -1,10 +1,11 @@
-import type { Product } from "@/data/mockData";
+import type { MenuProduct } from "@/hooks/useCustomerMenu";
 
 interface ProductCardProps {
-  product: Product;
+  product: MenuProduct;
+  categoryIcon?: string;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, categoryIcon }: ProductCardProps) {
   const formatPrice = (price: number) => {
     return price.toLocaleString("pt-BR", {
       style: "currency",
@@ -23,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-secondary to-muted">
-            🍔
+            {categoryIcon || "🍔"}
           </div>
         )}
         {!product.available && (
