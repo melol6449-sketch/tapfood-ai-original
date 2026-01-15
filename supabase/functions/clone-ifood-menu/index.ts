@@ -61,11 +61,9 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        formats: [
-          'markdown',
-          {
-            type: 'json',
-            prompt: `Extract the restaurant menu from this iFood page. For each category, list all products with their names, descriptions, and prices. 
+        formats: ['markdown', 'extract'],
+        extract: {
+          prompt: `Extract the restaurant menu from this iFood page. For each category, list all products with their names, descriptions, and prices. 
             Return the data in this exact format:
             {
               "restaurantName": "Name of the restaurant",
@@ -84,8 +82,7 @@ Deno.serve(async (req) => {
             }
             Make sure prices are numbers (not strings). If a price is not found, use 0.
             Extract all categories and products you can find on the page.`
-          }
-        ],
+        },
         onlyMainContent: false,
         waitFor: 3000, // Wait for dynamic content to load
       }),
@@ -106,11 +103,11 @@ Deno.serve(async (req) => {
     // Extract the JSON data from the response
     let menuData: MenuData = { categories: [] };
     
-    // Check for JSON extraction result
-    const jsonResult = data.data?.json || data.json;
-    if (jsonResult) {
-      menuData = jsonResult;
-      console.log('JSON extraction successful:', JSON.stringify(menuData).substring(0, 200));
+    // Check for extract result first (structured data)
+    const extractResult = data.data?.extract || data.extract;
+    if (extractResult) {
+      menuData = extractResult;
+      console.log('Extract successful:', JSON.stringify(menuData).substring(0, 200));
     } else {
       // Fallback: try to parse from markdown
       const markdown = data.data?.markdown || data.markdown;
