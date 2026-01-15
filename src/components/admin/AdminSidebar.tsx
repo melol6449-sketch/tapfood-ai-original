@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ListOrdered,
   Copy,
+  CreditCard,
 } from "lucide-react";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -19,6 +20,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: ClipboardList, label: "Pedidos", path: "/admin/pedidos" },
+  { icon: CreditCard, label: "Pagamentos", path: "/admin/pagamentos" },
   { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
 ];
 
