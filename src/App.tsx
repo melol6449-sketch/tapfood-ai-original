@@ -12,6 +12,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminMenu from "./pages/admin/AdminMenu";
 import AdminCloneMenu from "./pages/admin/AdminCloneMenu";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,9 +29,10 @@ const App = () => (
             <Route path="/cardapio" element={<CustomerMenu />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-            <Route path="pedidos" element={<AdminOrders />} />
+              <Route path="pedidos" element={<AdminOrders />} />
               <Route path="cardapio" element={<AdminMenu />} />
               <Route path="cardapio/clonar" element={<AdminCloneMenu />} />
+              <Route path="pagamentos" element={<AdminPaymentMethods />} />
               <Route path="configuracoes" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
