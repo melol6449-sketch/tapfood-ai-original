@@ -9,9 +9,19 @@ export interface MenuCategory {
   position: number;
   is_visible: boolean;
   is_promo: boolean;
+  is_pizza_category: boolean;
+  pizza_sizes: string[] | null;
+  pizza_price_method: 'highest' | 'average' | null;
   created_at: string;
   updated_at: string;
 }
+
+// Helper to transform Supabase category data to MenuCategory
+const transformCategory = (data: any): MenuCategory => ({
+  ...data,
+  pizza_sizes: Array.isArray(data.pizza_sizes) ? data.pizza_sizes : [],
+  pizza_price_method: data.pizza_price_method || 'highest',
+});
 
 export interface MenuProduct {
   id: string;
@@ -45,7 +55,7 @@ export const useMenuData = () => {
       if (categoriesRes.error) throw categoriesRes.error;
       if (productsRes.error) throw productsRes.error;
 
-      setCategories(categoriesRes.data || []);
+      setCategories((categoriesRes.data || []).map(transformCategory));
       setProducts(productsRes.data || []);
     } catch (error: any) {
       toast({
@@ -73,7 +83,7 @@ export const useMenuData = () => {
         .single();
 
       if (error) throw error;
-      setCategories((prev) => [...prev, newCategory]);
+      setCategories((prev) => [...prev, transformCategory(newCategory)]);
       toast({ title: "Categoria criada com sucesso!" });
       return newCategory;
     } catch (error: any) {
@@ -97,7 +107,7 @@ export const useMenuData = () => {
 
       if (error) throw error;
       setCategories((prev) =>
-        prev.map((c) => (c.id === id ? updated : c))
+        prev.map((c) => (c.id === id ? transformCategory(updated) : c))
       );
       toast({ title: "Categoria atualizada!" });
       return updated;

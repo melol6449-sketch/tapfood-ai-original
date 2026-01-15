@@ -24,9 +24,10 @@ const CustomerMenu = () => {
     setCheckoutOpen(true);
   };
 
-  // Check if a category is "Pizza" category (has pizza flavors)
+  // Check if a category is "Pizza" category
   const isPizzaCategory = (categoryId: string) => {
-    return products.some(
+    const cat = categories.find(c => c.id === categoryId);
+    return cat?.is_pizza_category || products.some(
       (p) => p.category_id === categoryId && p.is_pizza_flavor
     );
   };
@@ -44,6 +45,7 @@ const CustomerMenu = () => {
     .map((cat) => ({
       ...cat,
       isPizza: isPizzaCategory(cat.id),
+      priceMethod: cat.pizza_price_method || 'highest',
       products: filteredProducts.filter((p) => p.category_id === cat.id),
     }))
     .filter((cat) => cat.products.length > 0);
@@ -99,7 +101,7 @@ const CustomerMenu = () => {
                           categoryName={category.name}
                           categoryIcon={category.icon}
                           flavors={category.products}
-                          priceMethod={settings?.pizza_price_method || 'highest'}
+                          priceMethod={category.priceMethod}
                         />
                       </div>
                     ) : (
