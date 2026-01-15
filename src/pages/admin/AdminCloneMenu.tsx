@@ -30,7 +30,7 @@ export default function AdminCloneMenu() {
   const [progress, setProgress] = useState<string>("");
   const [result, setResult] = useState<CloneResult | null>(null);
   const { toast } = useToast();
-  const { createCategory, createProduct, categories } = useMenuData();
+  const { categories } = useMenuData();
 
   const validateIfoodUrl = (url: string): boolean => {
     // Accept various iFood URL formats
@@ -109,45 +109,71 @@ export default function AdminCloneMenu() {
     try {
       let totalProducts = 0;
       let totalCategories = 0;
+      
+      // Keep track of created categories in this import session
+      const createdCategoriesMap: Record<string, string> = {};
 
       for (const category of result.categories) {
-        // Check if category already exists
+        setProgress(`Processando categoria "${category.name}"...`);
+        
+        // Check if category already exists in DB or was just created
         const existingCategory = categories.find(
           c => c.name.toLowerCase() === category.name.toLowerCase()
         );
-
+        
         let categoryId: string;
 
         if (existingCategory) {
           categoryId = existingCategory.id;
-          setProgress(`Categoria "${category.name}" já existe, adicionando produtos...`);
+        } else if (createdCategoriesMap[category.name.toLowerCase()]) {
+          // Use category created in this import session
+          categoryId = createdCategoriesMap[category.name.toLowerCase()];
         } else {
-          // Create new category
-          const newCategory = await createCategory({
-            name: category.name,
-            icon: "🍽️", // Default icon
-          });
+          // Create new category directly in Supabase
+          const maxPosition = Math.max(...categories.map((c) => c.position), -1);
+          const { data: newCategory, error } = await supabase
+            .from("menu_categories")
+            .insert({ 
+              name: category.name, 
+              icon: "🍽️",
+              position: maxPosition + 1 + totalCategories
+            })
+            .select()
+            .single();
           
-          if (newCategory) {
-            categoryId = newCategory.id;
-            totalCategories++;
-            setProgress(`Categoria "${category.name}" criada...`);
-          } else {
+          if (error) {
+            console.error('Error creating category:', error);
             continue;
           }
+          
+          categoryId = newCategory.id;
+          createdCategoriesMap[category.name.toLowerCase()] = categoryId;
+          totalCategories++;
         }
 
-        // Create products
-        for (const product of category.products) {
-          await createProduct({
-            category_id: categoryId,
-            name: product.name,
-            description: product.description || "",
-            price: product.price,
-          });
-          totalProducts++;
-          setProgress(`Produto "${product.name}" importado...`);
+        // Create products in batch for this category
+        const productsToCreate = category.products.map((product, index) => ({
+          category_id: categoryId,
+          name: product.name,
+          description: product.description || "",
+          price: product.price,
+          position: index,
+        }));
+
+        if (productsToCreate.length > 0) {
+          const { error: productsError, data: createdProducts } = await supabase
+            .from("menu_products")
+            .insert(productsToCreate)
+            .select();
+
+          if (productsError) {
+            console.error('Error creating products:', productsError);
+          } else {
+            totalProducts += createdProducts?.length || 0;
+          }
         }
+        
+        setProgress(`"${category.name}" importada com ${category.products.length} produtos`);
       }
 
       toast({
@@ -157,7 +183,7 @@ export default function AdminCloneMenu() {
 
       setResult(null);
       setIfoodUrl("");
-      setProgress("");
+      setProgress("Pronto! Acesse a Gestão de Cardápio para ver os itens.");
 
     } catch (error) {
       console.error('Error importing menu:', error);
@@ -166,6 +192,7 @@ export default function AdminCloneMenu() {
         description: "Ocorreu um erro ao importar alguns itens. Verifique a gestão de cardápio.",
         variant: "destructive",
       });
+      setProgress("");
     } finally {
       setIsLoading(false);
     }
