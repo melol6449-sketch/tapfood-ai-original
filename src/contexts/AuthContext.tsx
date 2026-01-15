@@ -20,25 +20,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAdminRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
+    const runCheck = async () =>
+      supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+
+    let { data, error } = await runCheck();
+
+    // When the tab stays open for a long time, the first request after idle can
+    // hit an expired access token. Refresh once and retry.
+    if (error && (error.code === "PGRST303" || error.message?.toLowerCase().includes("jwt expired"))) {
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.error("Error refreshing session:", refreshError);
+        return false;
+      }
+
+      ({ data, error } = await runCheck());
+    }
 
     if (error) {
       console.error("Error checking admin role:", error);
       return false;
     }
 
-    return !!data;
+    return Boolean(data);
   };
 
   useEffect(() => {
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        setIsLoading(true);
         setSession(session);
         setUser(session?.user ?? null);
 
