@@ -19,9 +19,12 @@ export type Database = {
           created_at: string
           icon: string
           id: string
+          is_pizza_category: boolean
           is_promo: boolean
           is_visible: boolean
           name: string
+          pizza_price_method: string | null
+          pizza_sizes: Json | null
           position: number
           updated_at: string
         }
@@ -29,9 +32,12 @@ export type Database = {
           created_at?: string
           icon?: string
           id?: string
+          is_pizza_category?: boolean
           is_promo?: boolean
           is_visible?: boolean
           name: string
+          pizza_price_method?: string | null
+          pizza_sizes?: Json | null
           position?: number
           updated_at?: string
         }
@@ -39,9 +45,12 @@ export type Database = {
           created_at?: string
           icon?: string
           id?: string
+          is_pizza_category?: boolean
           is_promo?: boolean
           is_visible?: boolean
           name?: string
+          pizza_price_method?: string | null
+          pizza_sizes?: Json | null
           position?: number
           updated_at?: string
         }

@@ -7,6 +7,9 @@ export interface MenuCategory {
   icon: string;
   position: number;
   is_visible: boolean;
+  is_pizza_category: boolean;
+  pizza_sizes: string[];
+  pizza_price_method: 'highest' | 'average';
 }
 
 export interface MenuProduct {
@@ -46,7 +49,11 @@ export const useCustomerMenu = () => {
       if (categoriesRes.error) throw categoriesRes.error;
       if (productsRes.error) throw productsRes.error;
 
-      setCategories(categoriesRes.data || []);
+      setCategories((categoriesRes.data || []).map((c: any) => ({
+        ...c,
+        pizza_sizes: Array.isArray(c.pizza_sizes) ? c.pizza_sizes : [],
+        pizza_price_method: c.pizza_price_method || 'highest',
+      })));
       setProducts(productsRes.data || []);
     } catch (error) {
       console.error("Error fetching menu data:", error);
