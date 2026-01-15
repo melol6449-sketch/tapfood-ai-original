@@ -30,7 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error && (error.code === "PGRST303" || error.message?.toLowerCase().includes("jwt expired"))) {
       const { error: refreshError } = await supabase.auth.refreshSession();
       if (refreshError) {
-        console.error("Error refreshing session:", refreshError);
         return false;
       }
 
@@ -38,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (error) {
-      console.error("Error checking admin role:", error);
       return false;
     }
 

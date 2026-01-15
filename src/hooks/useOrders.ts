@@ -32,7 +32,6 @@ export function useOrders(onNewOrder?: () => void) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching orders:", error);
       return;
     }
 
@@ -54,7 +53,6 @@ export function useOrders(onNewOrder?: () => void) {
       .eq("id", orderId);
 
     if (error) {
-      console.error("Error updating order status:", error);
       return false;
     }
 
@@ -76,7 +74,6 @@ export function useOrders(onNewOrder?: () => void) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
-          console.log("New order received:", payload);
           // Add new order to the list
           const newOrder = {
             ...payload.new,
@@ -96,7 +93,6 @@ export function useOrders(onNewOrder?: () => void) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders" },
         (payload) => {
-          console.log("Order updated:", payload);
           const updatedOrder = {
             ...payload.new,
             items: payload.new.items as unknown as OrderItem[],
@@ -114,15 +110,12 @@ export function useOrders(onNewOrder?: () => void) {
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "orders" },
         (payload) => {
-          console.log("Order deleted:", payload);
           setOrders((prev) =>
             prev.filter((order) => order.id !== payload.old.id)
           );
         }
       )
-      .subscribe((status) => {
-        console.log("Realtime subscription status:", status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);

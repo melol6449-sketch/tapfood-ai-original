@@ -101,8 +101,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
       clearCart();
       form.reset();
       toast.success("Pedido realizado com sucesso!");
-    } catch (error) {
-      console.error("Error creating order:", error);
+    } catch {
       toast.error("Erro ao realizar pedido. Tente novamente.");
     } finally {
       setIsSubmitting(false);

@@ -55,8 +55,8 @@ export const useCustomerMenu = () => {
         pizza_price_method: c.pizza_price_method || 'highest',
       })));
       setProducts(productsRes.data || []);
-    } catch (error) {
-      console.error("Error fetching menu data:", error);
+    } catch {
+      // Error fetching menu data - silent fail
     } finally {
       setLoading(false);
     }
