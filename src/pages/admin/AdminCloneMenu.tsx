@@ -161,7 +161,7 @@ export default function AdminCloneMenu() {
         if (productsFetchError) throw productsFetchError;
 
         const productMap = new Map(
-          (existingProducts || []).map((p) => [p.name.toLowerCase(), p])
+          (existingProducts || []).map((p) => [p.name.trim().toLowerCase(), p])
         );
 
         const productsToInsert: Array<{
