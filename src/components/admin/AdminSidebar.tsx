@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -15,6 +15,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
+import { useAuth } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const menuItems = [
@@ -31,7 +32,9 @@ const cardapioSubItems = [
 
 export function AdminSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { settings } = useRestaurantSettings();
+  const { signOut } = useAuth();
   const [cardapioOpen, setCardapioOpen] = useState(
     location.pathname.startsWith("/admin/cardapio")
   );
@@ -150,13 +153,16 @@ export function AdminSidebar() {
 
       {/* Logout */}
       <div className="p-4 border-t border-sidebar-border">
-        <NavLink
-          to="/"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+        <button
+          onClick={async () => {
+            await signOut();
+            navigate("/admin/login");
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
         >
           <LogOut className="w-5 h-5" />
           <span>Sair</span>
-        </NavLink>
+        </button>
       </div>
     </aside>
   );
