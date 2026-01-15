@@ -22,16 +22,13 @@ export function AdminSidebar() {
   const { settings } = useRestaurantSettings();
 
   const handleOpenWhatsApp = () => {
-    // Check if mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!settings?.whatsapp) return;
     
-    if (isMobile) {
-      // Opens WhatsApp app directly on mobile
-      window.location.href = "whatsapp://";
-    } else {
-      // Opens WhatsApp Web on desktop
-      window.open("https://web.whatsapp.com", "_blank");
-    }
+    // Remove non-numeric characters from the phone number
+    const phoneNumber = settings.whatsapp.replace(/\D/g, "");
+    
+    // Opens WhatsApp with the configured number (works on mobile and desktop)
+    window.open(`https://wa.me/${phoneNumber}`, "_blank");
   };
 
   return (
