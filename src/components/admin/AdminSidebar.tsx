@@ -8,17 +8,23 @@ import {
   LogOut,
   ChefHat,
 } from "lucide-react";
+import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: ClipboardList, label: "Pedidos", path: "/admin/pedidos" },
   { icon: UtensilsCrossed, label: "Cardápio", path: "/admin/cardapio" },
-  { icon: MessageCircle, label: "WhatsApp", path: "/admin/whatsapp" },
   { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
+  const { settings } = useRestaurantSettings();
+
+  const handleOpenWhatsApp = () => {
+    // Opens WhatsApp app directly without starting a conversation
+    window.open("whatsapp://", "_self");
+  };
 
   return (
     <aside className="w-64 bg-sidebar min-h-screen flex flex-col border-r border-sidebar-border">
@@ -62,6 +68,16 @@ export function AdminSidebar() {
               </li>
             );
           })}
+          {/* WhatsApp button - opens app directly */}
+          <li>
+            <button
+              onClick={handleOpenWhatsApp}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>WhatsApp</span>
+            </button>
+          </li>
         </ul>
       </nav>
 
