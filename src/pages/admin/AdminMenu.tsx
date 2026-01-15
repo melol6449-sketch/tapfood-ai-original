@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -88,12 +88,11 @@ const AdminMenu = () => {
   );
 
   // Initialize open categories
-  useState(() => {
+  useEffect(() => {
     if (categories.length > 0 && openCategories.length === 0) {
       setOpenCategories(categories.map((c) => c.id));
     }
-  });
-
+  }, [categories, openCategories.length]);
   const toggleCategory = (categoryId: string) => {
     setOpenCategories((prev) =>
       prev.includes(categoryId)

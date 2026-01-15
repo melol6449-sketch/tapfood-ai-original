@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,8 @@ export const SortableProductItem = ({
     isDragging,
   } = useSortable({ id: product.id });
 
+  const [imageError, setImageError] = useState(false);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -53,6 +56,8 @@ export const SortableProductItem = ({
       currency: "BRL",
     });
   };
+
+  const hasImage = !!product.image && !imageError;
 
   return (
     <div
@@ -70,8 +75,18 @@ export const SortableProductItem = ({
         <GripVertical className="w-4 h-4" />
       </button>
 
-      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-xl shrink-0">
-        {categoryIcon}
+      <div className="w-12 h-12 rounded-lg bg-secondary overflow-hidden flex items-center justify-center text-xl shrink-0">
+        {hasImage ? (
+          <img
+            src={product.image!}
+            alt={product.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span aria-hidden>{categoryIcon}</span>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
