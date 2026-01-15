@@ -157,6 +157,7 @@ export default function AdminCloneMenu() {
           name: product.name,
           description: product.description || "",
           price: product.price,
+          image: product.image || null,
           position: index,
         }));
 
