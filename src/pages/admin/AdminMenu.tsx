@@ -178,11 +178,12 @@ const AdminMenu = () => {
     price: number;
     category_id: string;
     is_pizza_flavor?: boolean;
+    image?: string | null;
   }) => {
     if (editingProduct) {
       await updateProduct(editingProduct.id, data);
     } else {
-      await createProduct(data);
+      await createProduct({ ...data, image: data.image });
     }
   };
 
