@@ -13,7 +13,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: ClipboardList, label: "Pedidos", path: "/admin/pedidos" },
   { icon: UtensilsCrossed, label: "Cardápio", path: "/admin/cardapio" },
-  { icon: MessageCircle, label: "WhatsApp/IA", path: "/admin/whatsapp" },
+  { icon: MessageCircle, label: "WhatsApp", path: "/admin/whatsapp" },
   { icon: Settings, label: "Configurações", path: "/admin/configuracoes" },
 ];
 

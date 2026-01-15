@@ -2,25 +2,47 @@ import { useState } from "react";
 import { whatsappSettings as initialSettings } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { MessageCircle, Bot, Save } from "lucide-react";
+import { MessageCircle, Bot, Save, ExternalLink } from "lucide-react";
+import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 
 const AdminWhatsApp = () => {
   const [settings, setSettings] = useState(initialSettings);
+  const { settings: restaurantSettings } = useRestaurantSettings();
 
   const handleSave = () => {
     // Would save to backend
     alert("Configurações salvas com sucesso!");
   };
 
+  const handleOpenWhatsApp = () => {
+    if (restaurantSettings?.whatsapp) {
+      // Remove non-numeric characters from the phone number
+      const cleanNumber = restaurantSettings.whatsapp.replace(/\D/g, "");
+      window.open(`https://wa.me/${cleanNumber}`, "_blank");
+    }
+  };
+
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-foreground">
-          WhatsApp / IA
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Configure o atendimento automático via WhatsApp
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            WhatsApp
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Configure o atendimento automático via WhatsApp
+          </p>
+        </div>
+        <Button
+          onClick={handleOpenWhatsApp}
+          variant="whatsapp"
+          size="lg"
+          disabled={!restaurantSettings?.whatsapp}
+          className="gap-2"
+        >
+          <ExternalLink className="w-5 h-5" />
+          Abrir WhatsApp
+        </Button>
       </div>
 
       <div className="max-w-2xl space-y-6">
