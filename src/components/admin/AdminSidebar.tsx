@@ -22,8 +22,16 @@ export function AdminSidebar() {
   const { settings } = useRestaurantSettings();
 
   const handleOpenWhatsApp = () => {
-    // Opens WhatsApp app directly without starting a conversation
-    window.open("whatsapp://", "_self");
+    // Check if mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Opens WhatsApp app directly on mobile
+      window.location.href = "whatsapp://";
+    } else {
+      // Opens WhatsApp Web on desktop
+      window.open("https://web.whatsapp.com", "_blank");
+    }
   };
 
   return (
