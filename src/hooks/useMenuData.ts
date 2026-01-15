@@ -139,6 +139,7 @@ export const useMenuData = () => {
     description?: string;
     price: number;
     is_pizza_flavor?: boolean;
+    image?: string | null;
   }) => {
     try {
       const categoryProducts = products.filter(
@@ -152,6 +153,7 @@ export const useMenuData = () => {
           ...data, 
           position: maxPosition + 1,
           is_pizza_flavor: data.is_pizza_flavor || false,
+          image: data.image || null,
         })
         .select()
         .single();
