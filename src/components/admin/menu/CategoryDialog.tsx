@@ -42,6 +42,7 @@ export const CategoryDialog = ({
   // Pizza-specific state
   const [pizzaSizes, setPizzaSizes] = useState<string[]>([]);
   const [newSize, setNewSize] = useState("");
+  const [pizzaMaxFlavors, setPizzaMaxFlavors] = useState<1 | 2>(1);
   const [pizzaPriceMethod, setPizzaPriceMethod] = useState<'highest' | 'average'>('highest');
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export const CategoryDialog = ({
       setCategoryType('outros');
       setPizzaSizes([]);
       setNewSize("");
+      setPizzaMaxFlavors(1);
       setPizzaPriceMethod('highest');
     }
   }, [category, open]);
@@ -243,34 +245,63 @@ export const CategoryDialog = ({
                   </p>
                 </div>
 
-                {/* Pizza Price Calculation Method */}
+                {/* Pizza Max Flavors */}
                 <div className="grid gap-2">
-                  <Label>Cálculo de Preço (Múltiplos Sabores)</Label>
+                  <Label>Quantidade de Sabores</Label>
                   <RadioGroup 
-                    value={pizzaPriceMethod} 
-                    onValueChange={(value) => setPizzaPriceMethod(value as 'highest' | 'average')}
-                    className="space-y-2"
+                    value={String(pizzaMaxFlavors)} 
+                    onValueChange={(value) => setPizzaMaxFlavors(Number(value) as 1 | 2)}
+                    className="flex gap-3"
                   >
-                    <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                      <RadioGroupItem value="highest" id="highest" />
-                      <Label htmlFor="highest" className="flex-1 cursor-pointer">
-                        <p className="font-medium text-foreground">Maior preço</p>
-                        <p className="text-xs text-muted-foreground">
-                          Cobra o valor do sabor mais caro selecionado
-                        </p>
+                    <div className={`flex-1 flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${
+                      pizzaMaxFlavors === 1 ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                    }`}>
+                      <RadioGroupItem value="1" id="flavor-1" />
+                      <Label htmlFor="flavor-1" className="flex-1 cursor-pointer">
+                        <p className="font-medium text-foreground">1 Sabor</p>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                      <RadioGroupItem value="average" id="average" />
-                      <Label htmlFor="average" className="flex-1 cursor-pointer">
-                        <p className="font-medium text-foreground">Média de preços</p>
-                        <p className="text-xs text-muted-foreground">
-                          Cobra a média dos valores dos sabores selecionados
-                        </p>
+                    <div className={`flex-1 flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${
+                      pizzaMaxFlavors === 2 ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                    }`}>
+                      <RadioGroupItem value="2" id="flavor-2" />
+                      <Label htmlFor="flavor-2" className="flex-1 cursor-pointer">
+                        <p className="font-medium text-foreground">2 Sabores</p>
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
+
+                {/* Pizza Price Calculation Method - Only show when 2 flavors */}
+                {pizzaMaxFlavors === 2 && (
+                  <div className="grid gap-2">
+                    <Label>Cálculo de Preço (2 Sabores)</Label>
+                    <RadioGroup 
+                      value={pizzaPriceMethod} 
+                      onValueChange={(value) => setPizzaPriceMethod(value as 'highest' | 'average')}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
+                        <RadioGroupItem value="highest" id="highest" />
+                        <Label htmlFor="highest" className="flex-1 cursor-pointer">
+                          <p className="font-medium text-foreground">Maior preço</p>
+                          <p className="text-xs text-muted-foreground">
+                            Cobra o valor do sabor mais caro selecionado
+                          </p>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
+                        <RadioGroupItem value="average" id="average" />
+                        <Label htmlFor="average" className="flex-1 cursor-pointer">
+                          <p className="font-medium text-foreground">Média de preços</p>
+                          <p className="text-xs text-muted-foreground">
+                            Cobra a média dos valores dos sabores selecionados
+                          </p>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                )}
               </>
             )}
           </div>
