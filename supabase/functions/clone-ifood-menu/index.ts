@@ -63,7 +63,8 @@ Deno.serve(async (req) => {
         url: formattedUrl,
         formats: ['markdown', 'extract'],
         extract: {
-          prompt: `Extract the restaurant menu from this iFood page. For each category, list all products with their names, descriptions, and prices. 
+          prompt: `Extract the restaurant menu from this iFood page. For each category, list all products with their names, descriptions, prices, AND image URLs.
+            Look for product images in img tags, background-image styles, or data attributes near each product.
             Return the data in this exact format:
             {
               "restaurantName": "Name of the restaurant",
@@ -74,14 +75,18 @@ Deno.serve(async (req) => {
                     {
                       "name": "Product name",
                       "description": "Product description",
-                      "price": 29.90
+                      "price": 29.90,
+                      "image": "https://full-url-to-product-image.jpg"
                     }
                   ]
                 }
               ]
             }
-            Make sure prices are numbers (not strings). If a price is not found, use 0.
-            Extract all categories and products you can find on the page.`
+            IMPORTANT: 
+            - Make sure prices are numbers (not strings). If a price is not found, use 0.
+            - Extract the FULL image URL for each product (usually from static-images.ifood.com.br or similar CDN).
+            - If no image is found for a product, omit the image field or set it to null.
+            - Extract all categories and products you can find on the page.`
         },
         onlyMainContent: false,
         waitFor: 3000, // Wait for dynamic content to load
