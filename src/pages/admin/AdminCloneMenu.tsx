@@ -87,7 +87,6 @@ export default function AdminCloneMenu() {
       });
 
     } catch (error) {
-      console.error('Error cloning menu:', error);
       toast({
         title: "Erro na clonagem",
         description: error instanceof Error ? error.message : "Não foi possível clonar o cardápio. Verifique o link e tente novamente.",
@@ -236,7 +235,6 @@ export default function AdminCloneMenu() {
       navigate("/admin/cardapio", { replace: true });
 
     } catch (error) {
-      console.error("Error importing menu:", error);
       toast({
         title: "Erro na importação",
         description:

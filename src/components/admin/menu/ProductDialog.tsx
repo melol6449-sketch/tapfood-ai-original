@@ -128,7 +128,6 @@ export const ProductDialog = ({
         description: "A imagem foi carregada com sucesso.",
       });
     } catch (error: any) {
-      console.error("Upload error:", error);
       toast({
         title: "Erro no upload",
         description: error.message || "Não foi possível enviar a imagem.",

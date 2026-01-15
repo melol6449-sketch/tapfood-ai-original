@@ -52,8 +52,8 @@ const playNotificationSound = () => {
       oscillator2.start(audioContext.currentTime);
       oscillator2.stop(audioContext.currentTime + 0.5);
     }, 200);
-  } catch (error) {
-    console.error("Error playing notification sound:", error);
+  } catch {
+    // Audio playback failed - non-critical
   }
 };
 
