@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useMenuData } from "@/hooks/useMenuData";
 
 interface ClonedProduct {
   name: string;
@@ -30,8 +30,7 @@ export default function AdminCloneMenu() {
   const [progress, setProgress] = useState<string>("");
   const [result, setResult] = useState<CloneResult | null>(null);
   const { toast } = useToast();
-  const { categories } = useMenuData();
-
+  const navigate = useNavigate();
   const validateIfoodUrl = (url: string): boolean => {
     // Accept various iFood URL formats
     const patterns = [
@@ -101,96 +100,149 @@ export default function AdminCloneMenu() {
   };
 
   const handleImport = async () => {
-    if (!result?.categories) return;
+    if (!result?.categories?.length) return;
 
     setIsLoading(true);
     setProgress("Importando categorias e produtos...");
 
     try {
-      let totalProducts = 0;
-      let totalCategories = 0;
-      
-      // Keep track of created categories in this import session
-      const createdCategoriesMap: Record<string, string> = {};
+      let totalProductsInserted = 0;
+      let totalProductsUpdated = 0;
+      let totalCategoriesCreated = 0;
+
+      // Sempre busque o estado atual do banco para evitar duplicar categorias/produtos
+      const { data: existingCategories, error: categoriesError } = await supabase
+        .from("menu_categories")
+        .select("id,name,position");
+
+      if (categoriesError) throw categoriesError;
+
+      const categoryMap = new Map(
+        (existingCategories || []).map((c) => [c.name.toLowerCase(), c])
+      );
+
+      let nextCategoryPosition =
+        Math.max(...(existingCategories || []).map((c) => c.position), -1) + 1;
 
       for (const category of result.categories) {
         setProgress(`Processando categoria "${category.name}"...`);
-        
-        // Check if category already exists in DB or was just created
-        const existingCategory = categories.find(
-          c => c.name.toLowerCase() === category.name.toLowerCase()
-        );
-        
-        let categoryId: string;
 
-        if (existingCategory) {
-          categoryId = existingCategory.id;
-        } else if (createdCategoriesMap[category.name.toLowerCase()]) {
-          // Use category created in this import session
-          categoryId = createdCategoriesMap[category.name.toLowerCase()];
-        } else {
-          // Create new category directly in Supabase
-          const maxPosition = Math.max(...categories.map((c) => c.position), -1);
-          const { data: newCategory, error } = await supabase
+        const normalizedCategoryName = category.name.trim();
+        const categoryKey = normalizedCategoryName.toLowerCase();
+
+        let categoryId = categoryMap.get(categoryKey)?.id;
+
+        // 1) Criar categoria se não existir
+        if (!categoryId) {
+          const { data: newCategory, error: createCategoryError } = await supabase
             .from("menu_categories")
-            .insert({ 
-              name: category.name, 
+            .insert({
+              name: normalizedCategoryName,
               icon: "🍽️",
-              position: maxPosition + 1 + totalCategories
+              position: nextCategoryPosition,
             })
-            .select()
+            .select("id,name,position")
             .single();
-          
-          if (error) {
-            console.error('Error creating category:', error);
-            continue;
-          }
-          
+
+          if (createCategoryError) throw createCategoryError;
+
           categoryId = newCategory.id;
-          createdCategoriesMap[category.name.toLowerCase()] = categoryId;
-          totalCategories++;
+          categoryMap.set(categoryKey, newCategory);
+          nextCategoryPosition += 1;
+          totalCategoriesCreated += 1;
         }
 
-        // Create products in batch for this category
-        const productsToCreate = category.products.map((product, index) => ({
-          category_id: categoryId,
-          name: product.name,
-          description: product.description || "",
-          price: product.price,
-          image: product.image || null,
-          position: index,
-        }));
+        // 2) Buscar produtos existentes dessa categoria para atualizar ao invés de duplicar
+        const { data: existingProducts, error: productsFetchError } = await supabase
+          .from("menu_products")
+          .select("id,name")
+          .eq("category_id", categoryId);
 
-        if (productsToCreate.length > 0) {
-          const { error: productsError, data: createdProducts } = await supabase
-            .from("menu_products")
-            .insert(productsToCreate)
-            .select();
+        if (productsFetchError) throw productsFetchError;
 
-          if (productsError) {
-            console.error('Error creating products:', productsError);
+        const productMap = new Map(
+          (existingProducts || []).map((p) => [p.name.toLowerCase(), p])
+        );
+
+        const productsToInsert: Array<{
+          category_id: string;
+          name: string;
+          description: string;
+          price: number;
+          image: string | null;
+          position: number;
+        }> = [];
+
+        const productsToUpdate: Array<{ id: string; data: any }> = [];
+
+        category.products.forEach((product, index) => {
+          const normalizedProductName = product.name.trim();
+          const productKey = normalizedProductName.toLowerCase();
+
+          const image = product.image?.trim() ? product.image.trim() : null;
+
+          const payload = {
+            category_id: categoryId,
+            name: normalizedProductName,
+            description: (product.description || "").trim(),
+            price: Number(product.price) || 0,
+            image,
+            position: index,
+          };
+
+          const existing = productMap.get(productKey);
+          if (existing) {
+            productsToUpdate.push({ id: existing.id, data: payload });
           } else {
-            totalProducts += createdProducts?.length || 0;
+            productsToInsert.push(payload);
           }
+        });
+
+        // 3) Inserir novos produtos em lote
+        if (productsToInsert.length > 0) {
+          const { data: inserted, error: insertError } = await supabase
+            .from("menu_products")
+            .insert(productsToInsert)
+            .select("id");
+
+          if (insertError) throw insertError;
+          totalProductsInserted += inserted?.length || 0;
         }
-        
-        setProgress(`"${category.name}" importada com ${category.products.length} produtos`);
+
+        // 4) Atualizar produtos existentes (evita duplicação quando clonar novamente)
+        if (productsToUpdate.length > 0) {
+          const updatePromises = productsToUpdate.map(({ id, data }) =>
+            supabase.from("menu_products").update(data).eq("id", id)
+          );
+          const results = await Promise.all(updatePromises);
+          const updateErrors = results
+            .map((r) => r.error)
+            .filter(Boolean) as Array<{ message: string }>;
+
+          if (updateErrors.length) {
+            throw new Error(updateErrors[0].message);
+          }
+
+          totalProductsUpdated += productsToUpdate.length;
+        }
       }
 
       toast({
         title: "Importação concluída!",
-        description: `${totalCategories} categorias e ${totalProducts} produtos foram adicionados ao seu cardápio.`,
+        description: `${totalCategoriesCreated} categorias criadas, ${totalProductsInserted} produtos adicionados e ${totalProductsUpdated} produtos atualizados.`,
       });
 
-      setResult(null);
-      setIfoodUrl("");
-      setProgress("Pronto! Acesse a Gestão de Cardápio para ver os itens.");
+      // Redireciona para a Gestão de Cardápio para o admin ver imediatamente as imagens/itens.
+      navigate("/admin/cardapio", { replace: true });
 
     } catch (error) {
-      console.error('Error importing menu:', error);
+      console.error("Error importing menu:", error);
       toast({
         title: "Erro na importação",
-        description: "Ocorreu um erro ao importar alguns itens. Verifique a gestão de cardápio.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Ocorreu um erro ao importar o cardápio.",
         variant: "destructive",
       });
       setProgress("");
