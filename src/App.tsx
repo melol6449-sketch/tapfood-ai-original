@@ -10,7 +10,6 @@ import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminMenu from "./pages/admin/AdminMenu";
-import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
@@ -30,7 +29,6 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="pedidos" element={<AdminOrders />} />
               <Route path="cardapio" element={<AdminMenu />} />
-              <Route path="whatsapp" element={<AdminWhatsApp />} />
               <Route path="configuracoes" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
