@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, CheckCircle, MapPin, User, Phone, CreditCard, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle, MapPin, User, Phone, CreditCard, ArrowLeft, AlertTriangle, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +26,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { toast } from "sonner";
 import { PixPaymentScreen } from "./PixPaymentScreen";
+import { AddressAutocomplete } from "./AddressAutocomplete";
+import { 
+  GeocodedAddress, 
+  calculateHaversineDistance, 
+  calculateDeliveryFee 
+} from "@/lib/geocoding";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
@@ -49,6 +55,12 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
   const { items, total, clearCart } = useCart();
   const { settings } = useRestaurantSettings();
 
+  // Delivery fee state
+  const [selectedAddress, setSelectedAddress] = useState<GeocodedAddress | null>(null);
+  const [deliveryFee, setDeliveryFee] = useState<number>(0);
+  const [isOutOfRange, setIsOutOfRange] = useState(false);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+
   const paymentMethods = settings?.payment_methods || ["Dinheiro", "Pix", "Cartão"];
 
   const form = useForm<CheckoutFormData>({
@@ -61,6 +73,40 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
     },
   });
 
+  // Calculate delivery fee when address is selected
+  useEffect(() => {
+    if (!selectedAddress || !settings) {
+      setDeliveryFee(0);
+      setIsOutOfRange(false);
+      setDistanceKm(null);
+      return;
+    }
+
+    const { base_address_lat, base_address_lng, delivery_zones } = settings;
+
+    // If no base address configured, no fee calculation
+    if (!base_address_lat || !base_address_lng) {
+      setDeliveryFee(0);
+      setIsOutOfRange(false);
+      setDistanceKm(null);
+      return;
+    }
+
+    // Calculate distance
+    const distance = calculateHaversineDistance(
+      base_address_lat,
+      base_address_lng,
+      selectedAddress.lat,
+      selectedAddress.lng
+    );
+    setDistanceKm(distance);
+
+    // Calculate fee based on zones
+    const { fee, inRange } = calculateDeliveryFee(distance, delivery_zones);
+    setDeliveryFee(fee);
+    setIsOutOfRange(!inRange);
+  }, [selectedAddress, settings]);
+
   const formatPrice = (price: number) => {
     return price.toLocaleString("pt-BR", {
       style: "currency",
@@ -68,9 +114,16 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
     });
   };
 
+  const grandTotal = total + deliveryFee;
+
   const submitOrder = async (data: CheckoutFormData) => {
     if (items.length === 0) {
       toast.error("Seu carrinho está vazio");
+      return;
+    }
+
+    if (isOutOfRange) {
+      toast.error("Endereço fora da área de entrega");
       return;
     }
 
@@ -90,7 +143,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
         customer_address: data.address,
         payment_method: data.paymentMethod,
         items: orderItems,
-        total: total,
+        total: grandTotal,
         status: "pending",
       });
 
@@ -100,6 +153,8 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
       setShowPixScreen(false);
       clearCart();
       form.reset();
+      setSelectedAddress(null);
+      setDeliveryFee(0);
       toast.success("Pedido realizado com sucesso!");
     } catch {
       toast.error("Erro ao realizar pedido. Tente novamente.");
@@ -109,6 +164,11 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
   };
 
   const onSubmit = async (data: CheckoutFormData) => {
+    if (isOutOfRange) {
+      toast.error("Endereço fora da área de entrega");
+      return;
+    }
+
     // Check if PIX was selected and PIX key is configured
     const isPixPayment = data.paymentMethod.toLowerCase() === "pix";
     const hasPixKey = settings?.pix_key && settings.pix_key.trim() !== "";
@@ -138,8 +198,16 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
       setOrderComplete(false);
       setShowPixScreen(false);
       setFormData(null);
+      setSelectedAddress(null);
+      setDeliveryFee(0);
+      setIsOutOfRange(false);
       onOpenChange(false);
     }
+  };
+
+  const handleAddressSelect = (address: GeocodedAddress) => {
+    setSelectedAddress(address);
+    form.setValue("address", address.displayName);
   };
 
   return (
@@ -180,7 +248,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
           <PixPaymentScreen
             pixKey={settings.pix_key}
             pixKeyType={settings.pix_key_type || "random"}
-            total={total}
+            total={grandTotal}
             onConfirm={handlePixConfirm}
             isSubmitting={isSubmitting}
           />
@@ -231,12 +299,45 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
                       Endereço de Entrega
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Rua, número, bairro" {...field} />
+                      <AddressAutocomplete
+                        value={field.value}
+                        onChange={field.onChange}
+                        onAddressSelect={handleAddressSelect}
+                        placeholder="Digite seu endereço completo"
+                        error={form.formState.errors.address?.message}
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Delivery fee info */}
+              {selectedAddress && (
+                <div className={`p-3 rounded-lg border ${isOutOfRange ? 'border-destructive bg-destructive/10' : 'border-border bg-secondary/50'}`}>
+                  {isOutOfRange ? (
+                    <div className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        Endereço fora da área de entrega
+                        {distanceKm && ` (${distanceKm.toFixed(1)} km)`}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Truck className="w-4 h-4" />
+                        <span className="text-sm">
+                          Taxa de entrega
+                          {distanceKm && ` (${distanceKm.toFixed(1)} km)`}
+                        </span>
+                      </div>
+                      <span className="font-medium text-foreground">
+                        {deliveryFee === 0 ? "Grátis" : formatPrice(deliveryFee)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <FormField
                 control={form.control}
@@ -275,22 +376,34 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
                 )}
               />
 
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between text-lg font-bold mb-4">
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(total)}</span>
+                </div>
+                {deliveryFee > 0 && (
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Entrega</span>
+                    <span>{formatPrice(deliveryFee)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">{formatPrice(total)}</span>
+                  <span className="text-primary">{formatPrice(grandTotal)}</span>
                 </div>
                 <Button
                   type="submit"
                   size="lg"
                   className="w-full"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isOutOfRange}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Enviando...
                     </>
+                  ) : isOutOfRange ? (
+                    "Fora da área de entrega"
                   ) : (
                     "Confirmar Pedido"
                   )}
