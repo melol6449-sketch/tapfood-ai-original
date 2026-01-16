@@ -148,7 +148,10 @@ export type Database = {
       restaurant_settings: {
         Row: {
           address: string | null
+          base_address_lat: number | null
+          base_address_lng: number | null
           created_at: string
+          delivery_zones: Json
           id: string
           is_open: boolean
           logo: string | null
@@ -164,7 +167,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          base_address_lat?: number | null
+          base_address_lng?: number | null
           created_at?: string
+          delivery_zones?: Json
           id?: string
           is_open?: boolean
           logo?: string | null
@@ -180,7 +186,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          base_address_lat?: number | null
+          base_address_lng?: number | null
           created_at?: string
+          delivery_zones?: Json
           id?: string
           is_open?: boolean
           logo?: string | null
