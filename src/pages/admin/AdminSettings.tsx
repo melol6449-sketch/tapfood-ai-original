@@ -6,6 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Save, Store, MapPin, Clock, Loader2, Upload, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DeliveryZonesConfig } from "@/components/admin/DeliveryZonesConfig";
+import { DeliveryZone } from "@/lib/geocoding";
 
 const AdminSettings = () => {
   const { settings, loading, updateSettings } = useRestaurantSettings();
@@ -21,6 +23,9 @@ const AdminSettings = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [logo, setLogo] = useState<string | null>(null);
   const [openingHours, setOpeningHours] = useState<Record<string, { open: string; close: string } | null>>({});
+  const [baseAddressLat, setBaseAddressLat] = useState<number | null>(null);
+  const [baseAddressLng, setBaseAddressLng] = useState<number | null>(null);
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [initialized, setInitialized] = useState(false);
 
   // Initialize form when settings load
@@ -31,6 +36,9 @@ const AdminSettings = () => {
     setIsOpen(settings.is_open);
     setLogo(settings.logo);
     setOpeningHours(settings.opening_hours || {});
+    setBaseAddressLat(settings.base_address_lat);
+    setBaseAddressLng(settings.base_address_lng);
+    setDeliveryZones(settings.delivery_zones || []);
     setInitialized(true);
   }
 
@@ -96,10 +104,19 @@ const AdminSettings = () => {
         logo,
         is_open: isOpen,
         opening_hours: openingHours,
+        base_address_lat: baseAddressLat,
+        base_address_lng: baseAddressLng,
+        delivery_zones: deliveryZones,
       });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBaseAddressChange = (newAddress: string, lat: number, lng: number) => {
+    setAddress(newAddress);
+    setBaseAddressLat(lat);
+    setBaseAddressLng(lng);
   };
 
   const updateHour = (day: string, field: "open" | "close", value: string) => {
@@ -294,6 +311,15 @@ const AdminSettings = () => {
           </div>
         </div>
 
+        {/* Delivery Zones */}
+        <DeliveryZonesConfig
+          baseAddress={address}
+          baseAddressLat={baseAddressLat}
+          baseAddressLng={baseAddressLng}
+          deliveryZones={deliveryZones}
+          onBaseAddressChange={handleBaseAddressChange}
+          onZonesChange={setDeliveryZones}
+        />
 
         <Button onClick={handleSave} size="lg" className="w-full" disabled={saving}>
           {saving ? (

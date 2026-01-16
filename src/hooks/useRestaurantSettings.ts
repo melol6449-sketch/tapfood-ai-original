@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+import { DeliveryZone } from "@/lib/geocoding";
+
 export interface RestaurantSettings {
   id: string;
   name: string;
@@ -15,6 +17,9 @@ export interface RestaurantSettings {
   pizza_price_method: 'highest' | 'average';
   pix_key: string | null;
   pix_key_type: string | null;
+  base_address_lat: number | null;
+  base_address_lng: number | null;
+  delivery_zones: DeliveryZone[];
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +43,7 @@ export const useRestaurantSettings = () => {
         ...data,
         opening_hours: data.opening_hours as Record<string, { open: string; close: string } | null>,
         pizza_price_method: (data.pizza_price_method || 'highest') as 'highest' | 'average',
+        delivery_zones: (Array.isArray(data.delivery_zones) ? data.delivery_zones : []) as unknown as DeliveryZone[],
       } as RestaurantSettings);
     } catch (error: any) {
       toast({
@@ -54,13 +60,13 @@ export const useRestaurantSettings = () => {
     fetchSettings();
   }, []);
 
-  const updateSettings = async (data: Partial<RestaurantSettings>) => {
+  const updateSettings = async (data: Partial<Omit<RestaurantSettings, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!settings) return;
 
     try {
       const { data: updated, error } = await supabase
         .from("restaurant_settings")
-        .update(data)
+        .update(data as any)
         .eq("id", settings.id)
         .select()
         .single();
@@ -70,6 +76,7 @@ export const useRestaurantSettings = () => {
         ...updated,
         opening_hours: updated.opening_hours as Record<string, { open: string; close: string } | null>,
         pizza_price_method: (updated.pizza_price_method || 'highest') as 'highest' | 'average',
+        delivery_zones: (Array.isArray(updated.delivery_zones) ? updated.delivery_zones : []) as unknown as DeliveryZone[],
       } as RestaurantSettings);
       toast({ title: "Configurações salvas!" });
       return updated;
